@@ -1,0 +1,27 @@
+Interrupt 67h Service 57h Buffer Format
+
+Copying to EMS:
+Offset	Length	Type	Description
+ 0	4	LONG	Length of memory to copy.
+ 4	1	BYTE	Source memory type: CHR$(0).
+ 5	2	INT	Source memory handle: MKI$(0).
+ 7	2	INT	Source memory offset.
+ 9	2	INT	Source memory segment.
+11	1	BYTE	Destination memory type: CHR$(1).
+12	2	INT	Destination memory handle.
+14	2	INT	Destination memory offset.
+16	2	INT	Destination memory page number.
+
+Copying from EMS:
+Offset	Length	Type	Description
+ 0	4	LONG	Length of memory to copy
+ 4	1	BYTE	Source memory type: CHR$(1)
+ 5	2	INT	Source memory handle.
+ 7	2	INT	Source memory offset.
+ 9	2	INT	Source memory page number.
+11	1	BYTE	Destination memory type: CHR$(0).
+12	2	INT	Destination memory handle: MKI$(0).
+14	2	INT	Destination memory offset.
+16	2	INT	Destination memory segment.
+
+Size of buffer will always be 18 bytes.
