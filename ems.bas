@@ -31,17 +31,17 @@ DECLARE SUB EMSCopyBaseToBase (Length&, SrcSegment, SrcOffset, DstSegment, DstOf
 DECLARE SUB EMSCopyBaseToEMS (Length&, SrcSegment, SrcOffset, DstHandle, DstOffset, DstPage)
 DECLARE SUB EMSCopyEMSToBase (Length&, SrcHandle, SrcOffset, SrcPage, DstSegment, DstOffset)
 DECLARE SUB EMSCopyEMSToEMS (Length&, SrcHandle, SrcOffset, SrcPage, DstHandle, DstOffset, DstPage)
+DECLARE SUB EMSDeallocatePages (Handle)
 DECLARE SUB EMSExchangeBaseWithBase (Length&, Segment, Offset, OtherSegment, OtherOffset)
 DECLARE SUB EMSExchangeBaseWithEMS (Length&, BaseSegment, BaseOffset, EMSHandle, EMSOffset, EMSPage)
 DECLARE SUB EMSExchangeEMSWithEMS (Length&, Handle, Offset, Page, OtherHandle, OtherOffset, OtherPage)
-DECLARE SUB EMSDeallocatepages (Handle)
+DECLARE SUB EMSMapPages (PhysicalStart, LogicalStart, PageCount, Handle)
 DECLARE SUB InterruptX (intnum AS INTEGER, inreg AS RegTypeX, outreg AS RegTypeX)
 
 DIM SHARED EMSErrorCode
 
 DisplayStatus
 Demo
-
 
 SUB Demo
  DisplayColoredBars
@@ -60,7 +60,7 @@ SUB Demo
  EMSCopyEMSToBase &H4000, Handle, &H0, &H2, &HA000, &H8000
  EMSCopyEMSToBase &H3A00, Handle, &H0, &H3, &HAC00, &H0
 
- EMSDeallocatepages Handle
+ EMSDeallocatePages Handle
 END SUB
 
 SUB DisplayColoredBars
@@ -146,7 +146,7 @@ DIM Registers AS RegTypeX
  EMSErrorCode = Registers.ax \ &H100
 END SUB
 
-SUB EMSDeallocatepages (Handle)
+SUB EMSDeallocatePages (Handle)
 DIM Registers AS RegTypeX
 
  Registers.ax = &H4500
@@ -241,16 +241,16 @@ END SUB
 FUNCTION EMSFreeHandles
 DIM Registers AS RegTypeX
 
-  Registers.ax = &H4B00
-  InterruptX &H67, Registers, Registers
-  UsedHandles = Registers.bx
+ Registers.ax = &H4B00
+ InterruptX &H67, Registers, Registers
+ UsedHandles = Registers.bx
 
-  Registers.ax = &H5402
-  InterruptX &H67, Registers, Registers
-  EMSErrorCode = Registers.ax \ &H100
-  TotalHandles = Registers.bx
+ Registers.ax = &H5402
+ InterruptX &H67, Registers, Registers
+ EMSErrorCode = Registers.ax \ &H100
+ TotalHandles = Registers.bx
 
-  EMSFreeHandles = TotalHandles - UsedHandles
+ EMSFreeHandles = TotalHandles - UsedHandles
 END FUNCTION
 
 FUNCTION EMSFreePages
@@ -275,6 +275,22 @@ DIM Registers AS RegTypeX
 
  EMSInstalled = (EMM$ = "EMMXXXX0")
 END FUNCTION
+
+SUB EMSMapPages (PhysicalStart, LogicalStart, PageCount, Handle)
+DIM Registers AS RegTypeX
+
+ FOR Page = 0 TO PageCount - 1
+  MapInformation$ = MapInformation$ + MKI$(LogicalStart + Page) + MKI$(PhysicalStart + Page)
+ NEXT Page
+
+ Registers.ax = &H5000
+ Registers.cx = PageCount
+ Registers.dx = Handle
+ Registers.ds = VARSEG(MapInformation$)
+ Registers.si = SADD(MapInformation$)
+ InterruptX &H67, Registers, Registers
+ EMSErrorCode = Registers.ax \ &H100
+END SUB
 
 FUNCTION EMSPageFrameAddress
 DIM Registers AS RegTypeX
